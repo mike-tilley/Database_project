@@ -8,6 +8,9 @@ app = Flask(__name__)
 
 
 # routes go here
+@app.route("/")
+def index():
+    return Response(json.dumps("home page"), status=200, mimetype="application/json")
 
 @app.route("/ping")
 def ping():
