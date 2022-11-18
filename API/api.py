@@ -16,5 +16,9 @@ def index():
 def ping():
     return Response(json.dumps("PONG"), status=200, mimetype="application/json")
 
+@app.route("/register")
+def register():
+    return Response(json.dumps("this is the future, believe it or not"), status=200, mimetype="application/json")
+
 if __name__ == '__main__':
     app.run(debug=True)
