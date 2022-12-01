@@ -14,19 +14,19 @@ def index():
 def ping():
     return Response(json.dumps("PONG"), status=200, mimetype="application/json")
 
-@app.route("/register", methods=["POST"])
+@app.route("/register", methods=["GET"])
 def register():
     """ Add the user to the user table."""
     email = "test@okay.com"
-    first_name = "test"
-    last_name = "TEST"
+    first_name = "test2name"
+    last_name = "TESTlastname"
     password = "testPassword"
 
     try:
         # create a connection to the database
         connection, cursor = connect_to_database()
         # use the cursor to send user info to db
-        cursor.callproc("i_user", email, first_name, last_name, password)
+        cursor.callproc("i_user", ( email, first_name, last_name, password))
         results = unpack_results(stored_results=cursor.stored_results())
         print(results)
         connection.commit()
@@ -63,7 +63,7 @@ def users():
         if 'connection' in locals():
             connection.close()
         return Response(json.dumps(message), status=200, mimetype="application/json")
-    return Response(json.dumps("okay"), status=200, mimetype="application/json")
+    return Response(json.dumps(users), status=200, mimetype="application/json")
 
 if __name__ == '__main__':
     app.run(debug=True)
