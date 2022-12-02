@@ -68,6 +68,32 @@ def users():
     return Response(json.dumps(users), status=200, mimetype="application/json")
 
 
+@app.route("/login", methods=["GET"])
+def login():
+    """ log a user in. """
+    email = "test3@okay.com"
+    password = "test3Password"
+
+    try:
+        # create a connection to the database
+        connection, cursor = connect_to_database()
+        # use the cursor to call the get the user table
+        cursor.callproc("s_login",(email,password))
+        user_id = unpack_results(stored_results=cursor.stored_results())
+        print(user_id)
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return Response(json.dumps(f"the user id is : {user_id}"), status=200, mimetype="application/json")
+    except Exception as error:
+        message = f"and error occurred: {error}"
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
+        return Response(json.dumps(message), status=500, mimetype="application/json")
+
+
 @app.route("/delete_user", methods=["GET"])
 def delete_user():
     """ delete a user. """
@@ -83,6 +109,7 @@ def delete_user():
         connection.commit()
         cursor.close()
         connection.close()
+        return Response(json.dumps(f"the user was deleted"), status=200, mimetype="application/json")
     except Exception as error:
         message = f"and error occurred: {error}"
         if 'cursor' in locals():
