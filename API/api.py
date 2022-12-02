@@ -10,6 +10,16 @@ app = Flask(__name__)
 def index():
     return Response(json.dumps("home page"), status=200, mimetype="application/json")
 
+@app.route("/data")
+def data():
+    data = {
+        "Name": "Cristiam",
+        "Last": "Enciso",
+        "Age": "old"
+
+    }
+    return Response(json.dumps(data), status=200, mimetype="application/json")
+
 @app.route("/ping")
 def ping():
     return Response(json.dumps("PONG"), status=200, mimetype="application/json")
@@ -66,4 +76,4 @@ def users():
     return Response(json.dumps(users), status=200, mimetype="application/json")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host = '0.0.0.0' ,debug=True)
