@@ -1,5 +1,5 @@
 import json
-from flask import Flask, request, Response
+from flask import Flask, request, Response, render_template, redirect
 from infastructure_files.support import *
 from datetime import date
 
@@ -7,6 +7,11 @@ from datetime import date
 app = Flask(__name__)
 
 # routes go here
+
+@app.route('/home')
+def home():
+    return render_template("home_html")
+
 @app.route("/")
 def index():
     # return json.dumps("home page")

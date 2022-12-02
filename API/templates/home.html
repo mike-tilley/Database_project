@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+ 
+<head>
+    <title>Database Project </title>
+</head>
+ 
+<body>
+    <h2>Group 6</h2>
+    <h4>Flask -> MySQL</h4>
+ <!-- this section can be replaced by a child document -->  
+ <a href="{{ url_for('home') }}">home</a>
+<a href="{{ url_for('about') }}">about</a>
+<a href="{{ url_for('users') }}">current users</a>
+{% block body %}
+ 
+ 
+<p>this is in the body.</p>
+ 
+ 
+{% endblock %}
+ 
+ 
+</body>
+ 
+</html>
