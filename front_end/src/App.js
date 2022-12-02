@@ -1,23 +1,25 @@
-import logo from './logo.svg';
+
+import React, { useState, useEffect } from "react";
 import './App.css';
 
 function App() {
+  const [data, setData] = useState([])
+
+  useEffect(() => {
+    fetch('/users', {
+      'methods': 'GET',
+      headers:{
+        "Content-Type": "applications/json"
+      }
+      }).then(resp => resp.json())
+      .then(resp => console.log(resp))
+      .catch(error => console.log(error))
+
+  }, [])
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h1> Database Project Group 6 </h1>
     </div>
   );
 }
