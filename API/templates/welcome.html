@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+ 
+<head>
+    <title>Welcome</title>
+</head>
+ 
+<body>
+    <h2>welcome back user {{user_id}}</h2>
+ <!-- this section can be replaced by a child document -->  
+<a href="{{ url_for('logout') }}">logout</a>
+<a href="{{ url_for('view_active_available') }}">view available surveys</a>
+<a href="{{ url_for('view_survey_results') }}">view your survey results</a>
+{% block body %}
+ 
+ 
+<p>The users page.</p>
+<a href="{{ url_for('create_survey') }}">create a new survey</a>
+ 
+{% endblock %}
+ 
+ 
+</body>
+ 
+</html>
