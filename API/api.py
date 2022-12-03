@@ -1,27 +1,35 @@
 import json
-from flask import Flask, request, Response, render_template, redirect
+from flask import Flask, request, Response, render_template, redirect, session, url_for
 from infastructure_files.support import *
 from datetime import date
 
 # creating web framework functionality
 app = Flask(__name__)
+app.secret_key = "hbvfhjbvhjbv!@#@$#$!DDFRG@#R@#V"
 
 landing_page = "http://localhost:5000/"
 
 # routes go here
 @app.route('/home')
 def home():
+    if 'id' in session:
+        return redirect(url_for('welcome'))
     return render_template("home.html")
 
 @app.route('/about')
 def about():
     return json.dumps("this is the about.")
 
+@app.route('/logout')
+def logout():
+    if 'id' in session:
+        session.pop('id', None)
+    return render_template("home.html")
 
 @app.route("/")
 def index():
-    # return json.dumps("home page")
-    # return Response(json.dumps("home page"), status=200, mimetype="application/json")
+    if 'id' in session:
+        return redirect(url_for('welcome'))
     return render_template("home.html")
 
 @app.route("/ping")
@@ -86,7 +94,8 @@ def register():
             print("the connection is closed")
             user_id = result.pop()
             id = user_id['id']
-            return redirect(landing_page + f"welcome/{id}")
+            session['id'] = id
+            return redirect(landing_page + f"welcome")
         except Exception as e:
             message = f"and error occurred: {e}"
             if 'cursor' in locals():
@@ -121,7 +130,8 @@ def login():
             else:
                 user_id = result.pop()
                 id = user_id['id']
-                return redirect(landing_page + f"welcome/{id}")
+                session['id'] = id
+                return redirect(landing_page + f"welcome")
         except Exception as e:
             message = f"and error occurred: {e}"
             if 'cursor' in locals():
@@ -131,10 +141,69 @@ def login():
             return Response(json.dumps(message), status=500, mimetype="application/json")
     return render_template('login.html', error=error)
 
-@app.route("/welcome/<identifier>", methods=["GET"])
-def welcome(identifier):
-    print(f"in the welcome route with the identifier {identifier}")
-    return render_template('welcome.html', user_id=identifier)
+@app.route("/welcome", methods=["GET"])
+def welcome():
+    if 'id' in session:
+        id = session['id']
+    else:
+        id = 999999
+    print(f"in the welcome route with the identifier {id}")
+    return render_template('welcome.html', user_id = id)
+
+
+@app.route('/create_survey', methods=["GET","POST"])
+def create_survey():
+    error = None
+    if request.method == "POST":
+        try:
+            title = request.form['title']
+            num_type1 = request.form['type1num']
+            num_type2 =  request.form['type2num']
+            start = request.form['start']
+            end = request.form['end']
+            desc = request.form['description']
+        except Exception as e:
+            print(f"the error is: {e}")
+            return render_template('survey.html', error=e)
+        print(f"title: {title}")
+        print(f"num type 1: {num_type1}")
+        print(f"num type 2: {num_type2}")
+        print(f"description: {desc}")
+        print(f"start: {start}")
+        print(f"end: {end}")
+        return redirect(url_for('home'))
+        # try:
+        #     # create a connection to the database
+        #     connection, cursor = connect_to_database()
+        #     # use the cursor check if the email is already in use
+        #     cursor.callproc("s_user", (email,))
+        #     results = unpack_results(stored_results=cursor.stored_results())
+        #     if len(results) != 0:
+        #         error = 'email already in use'
+        #         return render_template('register.html', error=error)
+            
+        #     #email not in use so register the user
+        #     cursor.callproc("i_user", ( email, first_name, last_name, password))
+        #     result = unpack_results(stored_results=cursor.stored_results())
+        #     print(result)
+        #     connection.commit()
+        #     cursor.close()
+        #     connection.close()
+        #     print("the connection is closed")
+        #     user_id = result.pop()
+        #     id = user_id['id']
+        #     session['id'] = id
+        #     return redirect(landing_page + f"welcome")
+        # except Exception as e:
+        #     message = f"and error occurred: {e}"
+        #     if 'cursor' in locals():
+        #         cursor.close()
+        #     if 'connection' in locals():
+        #         connection.close()
+        #     return Response(json.dumps(message), status=500, mimetype="application/json")
+
+    return render_template('survey.html', error=error)
+
 
 # @app.route("/login", methods=["GET"])
 # def login():

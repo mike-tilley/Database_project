@@ -1,0 +1,44 @@
+{% extends 'welcome.html' %}
+
+{% block body %}
+ 
+<html>
+  <body>
+    <div class="container">
+      <h1>Create a new survey</h1>
+      <br>
+      <form action="" method="post">
+        <label for="What is the Title?">Title?</label>
+        <input type="text" placeholder="title" name="title" value="{{
+          request.form.type1num }}" required>
+        <br>
+        <label for="type1num">How many type 1 questions?</label>
+        <input type="text" placeholder="type1num" name="type1num" value="{{
+          request.form.type1num }}" required>
+        <br>
+        <label for="type2num">How many type 2 questions?</label>
+         <input type="text" placeholder="type2num" name="type2num" value="{{
+          request.form.type2num }}" required>
+        <br>
+        <label for="description">Description?</label>
+         <input type="text" placeholder="description" name="description" value="{{
+          request.form.description }}">
+        <br>
+        <label for="start">When to start the survey?</label>
+         <input type="date" name="start" value="{{
+          request.form.start }}" required>
+        <br>
+        <label for="end">When to end the survey?</label>
+         <input type="date" name="end" value="{{
+          request.form.start }}" required>
+        <br>
+        <input class="btn btn-default" type="submit" value="create">
+      </form>
+      {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}
+      {% endif %}
+    </div>
+  </body>
+</html>
+ 
+{% endblock %}
