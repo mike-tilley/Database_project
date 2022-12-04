@@ -171,40 +171,58 @@ def create_survey():
         print(f"description: {desc}")
         print(f"start: {start}")
         print(f"end: {end}")
-        return redirect(url_for('home'))
-        # try:
-        #     # create a connection to the database
-        #     connection, cursor = connect_to_database()
-        #     # use the cursor check if the email is already in use
-        #     cursor.callproc("s_user", (email,))
-        #     results = unpack_results(stored_results=cursor.stored_results())
-        #     if len(results) != 0:
-        #         error = 'email already in use'
-        #         return render_template('register.html', error=error)
-            
-        #     #email not in use so register the user
-        #     cursor.callproc("i_user", ( email, first_name, last_name, password))
-        #     result = unpack_results(stored_results=cursor.stored_results())
-        #     print(result)
-        #     connection.commit()
-        #     cursor.close()
-        #     connection.close()
-        #     print("the connection is closed")
-        #     user_id = result.pop()
-        #     id = user_id['id']
-        #     session['id'] = id
-        #     return redirect(landing_page + f"welcome")
-        # except Exception as e:
-        #     message = f"and error occurred: {e}"
-        #     if 'cursor' in locals():
-        #         cursor.close()
-        #     if 'connection' in locals():
-        #         connection.close()
-        #     return Response(json.dumps(message), status=500, mimetype="application/json")
+        try:
+            # create a connection to the database
+            connection, cursor = connect_to_database()
+            # use the cursor register survey and get its id
+            cursor.callproc("i_survey", (start, end, title, desc))
+            result = unpack_results(stored_results=cursor.stored_results())
+            print(result)
+            connection.commit()
+            cursor.close()
+            connection.close()
+            print("the connection is closed")
+            survey_id = result.pop()
+            sid = survey_id['in_surveyId']
+            session['sid'] = sid
+            return redirect(url_for('enter_question'))
+        except Exception as e:
+            message = f"and error occurred: {e}"
+            if 'cursor' in locals():
+                cursor.close()
+            if 'connection' in locals():
+                connection.close()
+            return Response(json.dumps(message), status=500, mimetype="application/json")
 
     return render_template('survey.html', error=error)
 
+@app.route("/enter_question", methods=["GET","POST"])
+def enter_question():
+    if 'sid' in session:
+        sid = session['sid']
+    else:
+        sid = 999999
+    questions = None
+    error = None
+    if request.method == "POST":
+        try:
+            if "type2" in request.form:
+                print("it is a type 1")
+                type = 2
+            elif "type1" in request.form:
+                print("it is a type 2")
+                type = 1
+            else:
+                raise Exception("check a box")
+            q = request.form["question"]
+            print(f"type: {type}")
+            print(f"question: {q}")
+        except Exception as e:
+            error=f"error: {e}"
+            return render_template('question.html', error=error, questions=questions)
+    return render_template("question.html" ,error=error, questions=questions)
 
+    
 # @app.route("/login", methods=["GET"])
 # def login():
 #     """ log a user in. """
