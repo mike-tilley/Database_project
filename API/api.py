@@ -171,40 +171,85 @@ def create_survey():
         print(f"description: {desc}")
         print(f"start: {start}")
         print(f"end: {end}")
-        return redirect(url_for('home'))
-        # try:
-        #     # create a connection to the database
-        #     connection, cursor = connect_to_database()
-        #     # use the cursor check if the email is already in use
-        #     cursor.callproc("s_user", (email,))
-        #     results = unpack_results(stored_results=cursor.stored_results())
-        #     if len(results) != 0:
-        #         error = 'email already in use'
-        #         return render_template('register.html', error=error)
-            
-        #     #email not in use so register the user
-        #     cursor.callproc("i_user", ( email, first_name, last_name, password))
-        #     result = unpack_results(stored_results=cursor.stored_results())
-        #     print(result)
-        #     connection.commit()
-        #     cursor.close()
-        #     connection.close()
-        #     print("the connection is closed")
-        #     user_id = result.pop()
-        #     id = user_id['id']
-        #     session['id'] = id
-        #     return redirect(landing_page + f"welcome")
-        # except Exception as e:
-        #     message = f"and error occurred: {e}"
-        #     if 'cursor' in locals():
-        #         cursor.close()
-        #     if 'connection' in locals():
-        #         connection.close()
-        #     return Response(json.dumps(message), status=500, mimetype="application/json")
+        try:
+            # create a connection to the database
+            connection, cursor = connect_to_database()
+            # use the cursor register survey and get its id
+            cursor.callproc("i_survey", (start, end, title, desc))
+            result = unpack_results(stored_results=cursor.stored_results())
+            print(result)
+            connection.commit()
+            cursor.close()
+            connection.close()
+            print("the connection is closed")
+            survey_id = result.pop()
+            sid = survey_id['in_surveyId']
+            session['sid'] = sid
+            return redirect(url_for('enter_question'))
+        except Exception as e:
+            message = f"and error occurred: {e}"
+            if 'cursor' in locals():
+                cursor.close()
+            if 'connection' in locals():
+                connection.close()
+            return Response(json.dumps(message), status=500, mimetype="application/json")
 
     return render_template('survey.html', error=error)
 
+@app.route("/enter_question", methods=["GET","POST"])
+def enter_question():
+    if 'sid' in session:
+        sid = session['sid']
+    else:
+        sid = 999999
+    questions = None
+    error = None
+    if request.method == "POST":
+        try:
+            if "type2" in request.form:
+                print("it is a type 1")
+                type = 2
+            elif "type1" in request.form:
+                print("it is a type 2")
+                type = 1
+            else:
+                raise Exception("check a box")
+            q = request.form["question"]
+            print(f"type: {type}")
+            print(f"question: {q}")
+        except Exception as e:
+            error=f"error: {e}"
+            return render_template('question.html', error=error, questions=questions)
+    return render_template("question.html" ,error=error, questions=questions)
 
+
+@app.route("/delete_survey", methods=["GET"])
+def delete_survey():
+    #deletes oldest survey
+    """ delete a survey. """
+    survey_id = 3
+
+    try:
+        # create a connection to the database
+        connection, cursor = connect_to_database()
+        # use the cursor to call the get the user table
+        cursor.callproc("d_survey")
+        confirm = unpack_results(stored_results=cursor.stored_results())
+        print(confirm)
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return Response(json.dumps(f"the survey was deleted"), status=200, mimetype="application/json")
+    except Exception as error:
+        message = f"and error occurred: {error}"
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
+        return Response(json.dumps(message), status=200, mimetype="application/json")
+
+
+    
 # @app.route("/login", methods=["GET"])
 # def login():
 #     """ log a user in. """
@@ -297,15 +342,41 @@ def create_survey():
 def view_active_available():
     """ this route will take a user id in the request paramters and find all the surverys available for the user to take based on
         the surveys start, end, and status or whether or not that have taken the survey once. """
+
     print("this is the place holder")
     return json.dumps("viewing all the active surveys right now.")
+    
 
 @app.route('/view_survey_results', methods=['GET'])
 def view_survey_results():
     """ this route will need to take a users id in the request parameters and find all the users surveys that have been
         comepleted and bring back the answers in some organized way. """
-    print("this is the place holder")
-    return json.dumps("this will bring back all the survey results.")
+    
+
+    if 'id' in session:
+        id = session['id']
+    else:
+        id = 999999
+    print(f"in the welcome route with the identifier {id}")   
+    try:
+        # create a connection to the database
+        connection, cursor = connect_to_database()
+        # use the cursor to call the get the user table
+        cursor.callproc("s_usersurvey", (id,))
+        surveys = unpack_results(stored_results=cursor.stored_results())
+        print(surveys)
+        connection.commit()
+        cursor.close()
+        connection.close()
+    except Exception as error:
+        message = f"and error occurred: {error}"
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
+        return Response(json.dumps(message), status=200, mimetype="application/json")
+    return Response(json.dumps(surveys), status=200, mimetype="application/json")
+    
 
 
 if __name__ == '__main__':

@@ -1,0 +1,35 @@
+{% extends 'welcome.html' %}
+
+
+{% block body %}
+
+<html>
+  <body>
+    <div class="container">
+        {% if questions %}
+        <p>{{ questions }}</p>
+        {% endif %}
+      <h3>Enter a Question</h3>
+      <br>
+      <form action="" method="post">
+        <input type="checkbox" id="type1" name="type1" value="type 1"{{
+          request.form.type1 }}">
+          <label for="type1"> Type 1</label>
+        <br>
+        <input type="checkbox" id="type2" name="type2" value="type 2"{{
+          request.form.type2 }}">
+        <label for="type2"> Type 2</label>
+        <br>
+        <input type="text" placeholder="question..." name="question" value="{{
+            request.form.type1num }}" required>
+        <br>
+        <input class="btn btn-default" type="submit" value="Add to Survey">
+      </form>
+      {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}
+      {% endif %}
+    </div>
+  </body>
+</html>
+ 
+{% endblock %}
