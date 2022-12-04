@@ -217,6 +217,25 @@ def enter_question():
             q = request.form["question"]
             print(f"type: {type}")
             print(f"question: {q}")
+            try:
+                # create a connection to the database
+                connection, cursor = connect_to_database()
+                # use the cursor register survey and get its id
+                cursor.callproc("i_question", (sid, type, q, 0))
+                result = unpack_results(stored_results=cursor.stored_results())
+                print(result)
+                connection.commit()
+                cursor.close()
+                connection.close()
+                print("the connection is closed")
+                return redirect(url_for('enter_question'))
+            except Exception as e:
+                message = f"and error occurred: {e}"
+                if 'cursor' in locals():
+                    cursor.close()
+                if 'connection' in locals():
+                    connection.close()
+                return Response(json.dumps(message), status=500, mimetype="application/json")
         except Exception as e:
             error=f"error: {e}"
             return render_template('question.html', error=error, questions=questions)
