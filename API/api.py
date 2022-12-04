@@ -171,11 +171,16 @@ def create_survey():
         print(f"description: {desc}")
         print(f"start: {start}")
         print(f"end: {end}")
+        today = date.today()
+        if 'id' in session:
+            id = session['id']
+        else:
+            id = 999999
         try:
             # create a connection to the database
             connection, cursor = connect_to_database()
             # use the cursor register survey and get its id
-            cursor.callproc("i_survey", (start, end, title, desc))
+            cursor.callproc("i_survey", (id, today, start, end, title, desc))
             result = unpack_results(stored_results=cursor.stored_results())
             print(result)
             connection.commit()
