@@ -2,6 +2,8 @@ import json
 from flask import Flask, request, Response, render_template, redirect, session, url_for
 from infastructure_files.support import *
 from datetime import date
+from collections import defaultdict
+
 
 # creating web framework functionality
 app = Flask(__name__)
@@ -388,16 +390,15 @@ def view_survey_results():
         connection, cursor = connect_to_database()
         # use the cursor to call the get the user table
         cursor.callproc("s_usersurvey", (id,))
-        results = unpack_results(stored_results=cursor.stored_results())
+        for result in cursor.stored_results():
+            data = result.fetchall()
+        
+        #results = unpack_results(stored_results=cursor.stored_results())
+        print(data)
         #temp = results.pop()
         # surveys = list(temp.values())
-        surveys = []
         # for v in temp.values():
         #     surveys.append(v)
-        temp = results.pop()
-        surveys.append(temp['title'])
-        surveys.append(temp['id'])
-        print(surveys)
         connection.commit()
         cursor.close()
         connection.close()
@@ -407,8 +408,8 @@ def view_survey_results():
             cursor.close()
         if 'connection' in locals():
             connection.close()
-        return render_template("survey_display.html", survey = surveys, error = error)
-    return render_template("survey_display.html", survey = surveys ,error = error)
+        return render_template("survey_display.html", survey = data, error = error)
+    return render_template("survey_display.html", survey = data ,error = error)
     #return Response(json.dumps(surveys), status=200, mimetype="application/json")
     
 
