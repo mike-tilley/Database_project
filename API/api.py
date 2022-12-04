@@ -171,11 +171,16 @@ def create_survey():
         print(f"description: {desc}")
         print(f"start: {start}")
         print(f"end: {end}")
+        today = date.today()
+        if 'id' in session:
+            id = session['id']
+        else:
+            id = 999999
         try:
             # create a connection to the database
             connection, cursor = connect_to_database()
             # use the cursor register survey and get its id
-            cursor.callproc("i_survey", (start, end, title, desc))
+            cursor.callproc("i_survey", (id, today, start, end, title, desc))
             result = unpack_results(stored_results=cursor.stored_results())
             print(result)
             connection.commit()
@@ -217,6 +222,25 @@ def enter_question():
             q = request.form["question"]
             print(f"type: {type}")
             print(f"question: {q}")
+            try:
+                # create a connection to the database
+                connection, cursor = connect_to_database()
+                # use the cursor register survey and get its id
+                cursor.callproc("i_question", (sid, type, q, 0))
+                result = unpack_results(stored_results=cursor.stored_results())
+                print(result)
+                connection.commit()
+                cursor.close()
+                connection.close()
+                print("the connection is closed")
+                return redirect(url_for('enter_question'))
+            except Exception as e:
+                message = f"and error occurred: {e}"
+                if 'cursor' in locals():
+                    cursor.close()
+                if 'connection' in locals():
+                    connection.close()
+                return Response(json.dumps(message), status=500, mimetype="application/json")
         except Exception as e:
             error=f"error: {e}"
             return render_template('question.html', error=error, questions=questions)
@@ -358,12 +382,21 @@ def view_survey_results():
     else:
         id = 999999
     print(f"in the welcome route with the identifier {id}")   
+    error = None
     try:
         # create a connection to the database
         connection, cursor = connect_to_database()
         # use the cursor to call the get the user table
         cursor.callproc("s_usersurvey", (id,))
-        surveys = unpack_results(stored_results=cursor.stored_results())
+        results = unpack_results(stored_results=cursor.stored_results())
+        #temp = results.pop()
+        # surveys = list(temp.values())
+        surveys = []
+        # for v in temp.values():
+        #     surveys.append(v)
+        temp = results.pop()
+        surveys.append(temp['title'])
+        surveys.append(temp['id'])
         print(surveys)
         connection.commit()
         cursor.close()
@@ -374,8 +407,9 @@ def view_survey_results():
             cursor.close()
         if 'connection' in locals():
             connection.close()
-        return Response(json.dumps(message), status=200, mimetype="application/json")
-    return Response(json.dumps(surveys), status=200, mimetype="application/json")
+        return render_template("survey_display.html", survey = surveys, error = error)
+    return render_template("survey_display.html", survey = surveys ,error = error)
+    #return Response(json.dumps(surveys), status=200, mimetype="application/json")
     
 
 

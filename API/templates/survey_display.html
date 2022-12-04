@@ -3,14 +3,31 @@
 
 {% block body %}
 
-<html>
+<html lang="on">
+  <head>
+    <meta charset ="UTF-8"/>
+    <meta name ="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Document</title>
+  </head>
   <body>
-    <div class="container">
-      <h1>Survey and id display</h1>
-      <br>
-      <br>
-    
-    </div>
+    <table>
+      <tr>
+        <th>Title</th>
+        <th>Survey ID</th>
+      </tr>
+      {% for row in survey %}
+      <tr>
+        {% for cell in row %}
+        <td>{{cell}}</td>
+
+        {% endfor %}
+      </tr>  
+      {% endfor %}
+      <!-- <tr>
+        <td>test</td>
+        <td>69</td>
+      </tr> -->
+    </table>
   </body>
 </html>
  
