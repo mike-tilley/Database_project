@@ -1,5 +1,5 @@
 import json
-from flask import Flask, request, Response, render_template, redirect, session, url_for
+from flask import Flask, request, Response, render_template, redirect, session, url_for, request
 from infastructure_files.support import *
 from datetime import date
 from collections import defaultdict
@@ -276,35 +276,47 @@ def delete_survey():
 
 
 @app.route("/survey_results", methods=["GET"])
-def survey_results(sid):
+def survey_results():
     try:
+        sid = session["sid"]
         connection, cursor = connect_to_database()
         cursor.callproc("s_survey_title", (sid,))
-        for result in cursor.stored_results():
-            title = result.fetchall()
-        cursor.callproc("s_survey_description", (sid))
-        for result in cursor.stored_results():
-            description = result.fetchall()
-        cursor.callproc("s_start_date", (sid))
-        for result in cursor.stored_results():
-            start = result.fetchall()
-        cursor.callproc("s_end_date", (sid))
-        for result in cursor.stored_results():
-            end = result.fetchall()
-        cursor.callproc("s_survey_questions", (sid))
-        for result in cursor.stored_results():
-            questions = result.fetchall()
-            
+        results = unpack_results(stored_results=cursor.stored_results())
+        for result in results:
+            title = result["title"]
         print(title)
+
+        cursor.callproc("s_survey_description", (sid,))
+        results = unpack_results(stored_results =cursor.stored_results())
+        for result in results:
+            description = result["description"]
         print(description)
+
+        cursor.callproc("s_start_date", (sid,))
+        results = unpack_results(stored_results =cursor.stored_results())
+        for result in results:
+            start = result["start"]
         print(start)
+
+
+        cursor.callproc("s_end_date", (sid,))
+        results = unpack_results(stored_results =cursor.stored_results())
+        for result in results:
+            end = result["end"]
         print(end)
+
+        cursor.callproc("s_survey_questions", (sid,))
+        results = unpack_results(stored_results =cursor.stored_results())
+        for result in results:
+            questions = result["q"]
         print(questions)
+
+        
 
         connection.commit()
         cursor.close()
         connection.close()
-        return Response(json.dumps(f"got the report"), status=200, mimetype="application/json")
+        return render_template('user_survey_results.html', title = title, description = description, start = start, end = end, questions = questions)
     except Exception as error:
         message = f"and error occurred: {error}"
         if 'cursor' in locals():
@@ -411,7 +423,7 @@ def view_active_available():
     return json.dumps("viewing all the active surveys right now.")
     
 
-@app.route('/view_survey_results', methods=['GET'])
+@app.route('/view_survey_results', methods=['GET', 'POST'])
 def view_survey_results():
     """ this route will need to take a users id in the request parameters and find all the users surveys that have been
         comepleted and bring back the answers in some organized way. """
@@ -437,6 +449,7 @@ def view_survey_results():
         # surveys = list(temp.values())
         # for v in temp.values():
         #     surveys.append(v)
+
         connection.commit()
         cursor.close()
         connection.close()
@@ -446,8 +459,14 @@ def view_survey_results():
             cursor.close()
         if 'connection' in locals():
             connection.close()
-        return render_template("survey_display.html", survey = data, error = error)
-    return render_template("survey_display.html", survey = data ,error = error)
+        return render_template("user_survey_display.html", survey = data, error = error)
+
+    if request.method == "POST":
+        print("the button is being clicked")
+        sid = request.form['sid']
+        session['sid'] = sid
+        return redirect(url_for(f'survey_results'))
+    return render_template("user_survey_display.html", survey = data ,error = error)
     #return Response(json.dumps(surveys), status=200, mimetype="application/json")
     
 
