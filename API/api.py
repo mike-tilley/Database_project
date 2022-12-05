@@ -275,6 +275,44 @@ def delete_survey():
         return Response(json.dumps(message), status=200, mimetype="application/json")
 
 
+@app.route("/survey_results", methods=["GET"])
+def survey_results(sid):
+    try:
+        connection, cursor = connect_to_database()
+        cursor.callproc("s_survey_title", (sid,))
+        for result in cursor.stored_results():
+            title = result.fetchall()
+        cursor.callproc("s_survey_description", (sid))
+        for result in cursor.stored_results():
+            description = result.fetchall()
+        cursor.callproc("s_start_date", (sid))
+        for result in cursor.stored_results():
+            start = result.fetchall()
+        cursor.callproc("s_end_date", (sid))
+        for result in cursor.stored_results():
+            end = result.fetchall()
+        cursor.callproc("s_survey_questions", (sid))
+        for result in cursor.stored_results():
+            questions = result.fetchall()
+            
+        print(title)
+        print(description)
+        print(start)
+        print(end)
+        print(questions)
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return Response(json.dumps(f"got the report"), status=200, mimetype="application/json")
+    except Exception as error:
+        message = f"and error occurred: {error}"
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
+        return Response(json.dumps(message), status=200, mimetype="application/json")
+
     
 # @app.route("/login", methods=["GET"])
 # def login():

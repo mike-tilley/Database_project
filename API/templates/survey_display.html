@@ -10,10 +10,10 @@
     <title>Document</title>
   </head>
   <body>
-    <table>
+    <table id="data" class="table table-striped">
       <tr>
         <th>Title</th>
-        <th>Survey ID</th>
+        <th>ID</th>
       </tr>
       {% for row in survey %}
       <tr>
@@ -23,11 +23,23 @@
         {% endfor %}
       </tr>  
       {% endfor %}
-      <!-- <tr>
-        <td>test</td>
-        <td>69</td>
-      </tr> -->
+
     </table>
+    <div class="container">
+      {% if questions %}
+      <p>{{ questions }}</p>
+      {% endif %}
+      <br>
+      <input type="text" placeholder="Enter Survey ID" name="question" value="{{
+          request.form.type1num }}" required>
+      <br>
+      <input class="btn btn-default" type="submit" value="View Report">
+    </form>
+    {% if error %}
+      <p class="error"><strong>Error:</strong> {{ error }}
+    {% endif %}
+  </div>
+    <!-- <button onclick="server.increment()">Select</button> -->
   </body>
 </html>
  
