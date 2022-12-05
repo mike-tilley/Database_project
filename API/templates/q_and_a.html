@@ -1,0 +1,32 @@
+{% extends 'welcome.html' %}
+
+
+{% block body %}
+
+<html>
+  <body>
+    <div class="container">
+      <h1>questions and answers</h1>
+      <br>
+      <br>
+      {% if questions %}
+        <p> {{ questions }}</p>
+      {% endif %}
+      <br>
+      <form action="" method="post">
+        <label> Enter answers seperated by ',' </label>
+        <br>
+        <input type="text" placeholder="answer" name="a" value="{{
+            request.form.a }}" required>
+        <br>
+        <input class="btn btn-default" type="submit" value="record answers">
+      </form>
+      {% if error %}
+      <p class="error"><strong>Error:</strong> {{ error }}
+      {% endif %}
+    
+    </div>
+  </body>
+</html>
+ 
+{% endblock %}
