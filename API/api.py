@@ -426,44 +426,44 @@ def take_survey():
 
     return render_template('q_and_a.html', questions=questions, error=error)
     
-    questions = None
-    error = None
-    if request.method == "POST":
-        try:
-            if "type2" in request.form:
-                print("it is a type 1")
-                type = 2
-            elif "type1" in request.form:
-                print("it is a type 2")
-                type = 1
-            else:
-                raise Exception("check a box")
-            q = request.form["question"]
-            print(f"type: {type}")
-            print(f"question: {q}")
-            try:
-                # create a connection to the database
-                connection, cursor = connect_to_database()
-                # use the cursor register survey and get its id
-                cursor.callproc("i_question", (sid, type, q, 0))
-                result = unpack_results(stored_results=cursor.stored_results())
-                print(result)
-                connection.commit()
-                cursor.close()
-                connection.close()
-                print("the connection is closed")
-                return redirect(url_for('enter_question'))
-            except Exception as e:
-                message = f"and error occurred: {e}"
-                if 'cursor' in locals():
-                    cursor.close()
-                if 'connection' in locals():
-                    connection.close()
-                return Response(json.dumps(message), status=500, mimetype="application/json")
-        except Exception as e:
-            error=f"error: {e}"
-            return render_template('question.html', error=error, questions=questions)
-    return render_template("question.html" ,error=error, questions=questions)
+    # questions = None
+    # error = None
+    # if request.method == "POST":
+    #     try:
+    #         if "type2" in request.form:
+    #             print("it is a type 1")
+    #             type = 2
+    #         elif "type1" in request.form:
+    #             print("it is a type 2")
+    #             type = 1
+    #         else:
+    #             raise Exception("check a box")
+    #         q = request.form["question"]
+    #         print(f"type: {type}")
+    #         print(f"question: {q}")
+    #         try:
+    #             # create a connection to the database
+    #             connection, cursor = connect_to_database()
+    #             # use the cursor register survey and get its id
+    #             cursor.callproc("i_question", (sid, type, q, 0))
+    #             result = unpack_results(stored_results=cursor.stored_results())
+    #             print(result)
+    #             connection.commit()
+    #             cursor.close()
+    #             connection.close()
+    #             print("the connection is closed")
+    #             return redirect(url_for('enter_question'))
+    #         except Exception as e:
+    #             message = f"and error occurred: {e}"
+    #             if 'cursor' in locals():
+    #                 cursor.close()
+    #             if 'connection' in locals():
+    #                 connection.close()
+    #             return Response(json.dumps(message), status=500, mimetype="application/json")
+    #     except Exception as e:
+    #         error=f"error: {e}"
+    #         return render_template('question.html', error=error, questions=questions)
+    # return render_template("question.html" ,error=error, questions=questions)
 
 
 @app.route("/delete_survey", methods=["GET"])
@@ -522,10 +522,16 @@ def survey_results():
             end = result["end"]
         print(end)
 
+
+        questions = []
         cursor.callproc("s_survey_questions", (sid,))
-        results = unpack_results(stored_results =cursor.stored_results())
-        for result in results:
-            questions = result["q"]
+        print(sid)
+        # results = unpack_results(stored_results =cursor.stored_results())
+        # print(results)
+        # for result in results:
+        #     questions.append( result["q"])
+        for result in cursor.stored_results():
+            questions = result.fetchall()
         print(questions)
 
         
