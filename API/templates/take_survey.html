@@ -6,7 +6,7 @@
 <html>
   <body>
     <div class="container">
-      <h1>Survey and id display</h1>
+      <h1>you are taking survey {{sid}}</h1>
       <br>
       <br>
       {% if surveys %}
@@ -17,13 +17,10 @@
         <label> Enter survey ID to take it </label>
         <br>
         <input type="text" placeholder="survey id" name="sid" value="{{
-            request.form.sid }}" required>
+            request.form.typesid }}" required>
         <br>
-        <input class="btn btn-default" type="submit" value="Take a Survey">
+        <input class="btn btn-default" type="submit" value="Submit">
       </form>
-      {% if error %}
-      <p class="error"><strong>Error:</strong> {{ error }}
-      {% endif %}
     
     </div>
   </body>

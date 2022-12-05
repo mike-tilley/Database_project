@@ -6,20 +6,20 @@
 <html>
   <body>
     <div class="container">
-      <h1>Survey and id display</h1>
+      <h1>questions and answers</h1>
       <br>
       <br>
-      {% if surveys %}
-        <p> {{ surveys }}</p>
+      {% if questions %}
+        <p> {{ questions }}</p>
       {% endif %}
       <br>
       <form action="" method="post">
-        <label> Enter survey ID to take it </label>
+        <label> Enter answers seperated by ',' </label>
         <br>
-        <input type="text" placeholder="survey id" name="sid" value="{{
-            request.form.sid }}" required>
+        <input type="text" placeholder="answer" name="a" value="{{
+            request.form.a }}" required>
         <br>
-        <input class="btn btn-default" type="submit" value="Take a Survey">
+        <input class="btn btn-default" type="submit" value="record answers">
       </form>
       {% if error %}
       <p class="error"><strong>Error:</strong> {{ error }}

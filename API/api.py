@@ -24,6 +24,8 @@ def about():
 def logout():
     if 'id' in session:
         session.pop('id', None)
+    if 'sid' in session:
+        session.pop('sid', None)
     return render_template("home.html")
 
 @app.route("/")
@@ -292,7 +294,8 @@ def enter_question():
 def view_active_available():
     """ this route will take a user id in the request paramters and find all the surverys available for the user to take based on
         the surveys start, end, and status or whether or not that have taken the survey once. """
-    
+
+    error = None
     surveys = None
     if 'id' in session:
         id = session['id']
@@ -323,8 +326,145 @@ def view_active_available():
 
     if request.method == "POST":
         print("nothing posting yet")
+        print(f"the result is: {result}")
+        try:
+            sid = int(request.form['sid'])
+            print(f"the sid is: {sid}")
+            survey_ids = []
+            for available_surveys in result:
+                for k, v in available_surveys.items():
+                    if k == 'id':
+                        survey_ids.append(v)
+            print(survey_ids)
+            if sid not in survey_ids:
+                print("raising exception")
+                raise Exception("no matching survey id")
+        except Exception as e:
+            error = e
+            return render_template('survey_display.html', surveys=surveys, error=error)
+        session['sid'] = sid
+        print("redirecting")
+
+        # redirecting to take the survey with user id and survey id stored in the session
+        return redirect(url_for('take_survey'))
     
-    return render_template('survey_display.html', surveys=surveys)
+    return render_template('survey_display.html', surveys=surveys, error=error)
+
+
+@app.route("/take_survey", methods=["GET","POST"])
+def take_survey():
+    """ this will take a survey id and bring back all the questions associated to that survey. 
+        Then the answers will be recorded in the answer table. """
+
+    questions = None
+    error = None
+
+    if 'id' in session:
+        id = session['id']
+    else:
+        id = 999999
+    if 'sid' in session:
+        sid = session['sid']
+    else:
+        id = 999999
+    try:
+        # create a connection to the database
+        connection, cursor = connect_to_database()
+        # use the cursor register survey and get its id
+        cursor.callproc("s_questions", (sid,))
+        result = unpack_results(stored_results=cursor.stored_results())
+        print(result)
+        questions = result
+        connection.commit()
+        cursor.close()
+        connection.close()
+        print("the connection is closed")
+    except Exception as e:
+        message = f"and error occurred: {e}"
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
+        return Response(json.dumps(message), status=500, mimetype="application/json")
+    if request.method == "POST":
+        """ unpack the input and call the stored procedure 'i_answer' to post the answers to answer table, 
+            then post to the user_answers relation."""
+        raw_input = request.form['a']
+        answer_list = raw_input.split(",")
+        print(answer_list)
+        q_a_dict = {}
+        question_id_list = []
+        for entry in result:
+            for k, v in entry.items():
+                if k == 'id':
+                    question_id_list.append(v)
+        print(f"qid list: {question_id_list}")
+        for i in range(len(question_id_list)):
+            q_a_dict.update({question_id_list[i]: answer_list[i]})
+        try:
+            # create a connection to the database
+            connection, cursor = connect_to_database()
+            # use the cursor loop and insert answers
+            for qid, a in q_a_dict.items():
+                print(f"about to insert {id} {qid} {a}")
+                cursor.callproc("i_answer", (id, qid, a))
+                result = unpack_results(stored_results=cursor.stored_results())
+                print(result)
+            connection.commit()
+            cursor.close()
+            connection.close()
+            print("the connection is closed")
+            redirect(url_for('welcome'))
+        except Exception as e:
+            message = f"and error occurred: {e}"
+            if 'cursor' in locals():
+                cursor.close()
+            if 'connection' in locals():
+                connection.close()
+            return Response(json.dumps(message), status=500, mimetype="application/json")
+    
+
+    return render_template('q_and_a.html', questions=questions, error=error)
+    
+    questions = None
+    error = None
+    if request.method == "POST":
+        try:
+            if "type2" in request.form:
+                print("it is a type 1")
+                type = 2
+            elif "type1" in request.form:
+                print("it is a type 2")
+                type = 1
+            else:
+                raise Exception("check a box")
+            q = request.form["question"]
+            print(f"type: {type}")
+            print(f"question: {q}")
+            try:
+                # create a connection to the database
+                connection, cursor = connect_to_database()
+                # use the cursor register survey and get its id
+                cursor.callproc("i_question", (sid, type, q, 0))
+                result = unpack_results(stored_results=cursor.stored_results())
+                print(result)
+                connection.commit()
+                cursor.close()
+                connection.close()
+                print("the connection is closed")
+                return redirect(url_for('enter_question'))
+            except Exception as e:
+                message = f"and error occurred: {e}"
+                if 'cursor' in locals():
+                    cursor.close()
+                if 'connection' in locals():
+                    connection.close()
+                return Response(json.dumps(message), status=500, mimetype="application/json")
+        except Exception as e:
+            error=f"error: {e}"
+            return render_template('question.html', error=error, questions=questions)
+    return render_template("question.html" ,error=error, questions=questions)
+
 
 @app.route('/view_survey_results', methods=['GET'])
 def view_survey_results():
