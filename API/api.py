@@ -87,14 +87,15 @@ def register():
             #email not in use so register the user
             cursor.callproc("i_user", ( email, first_name, last_name, password))
             result = unpack_results(stored_results=cursor.stored_results())
+            # result = cursor.fetchall()
             print(result)
+            user_id = result.pop()
+            id = user_id['id']
+            session['id'] = id
             connection.commit()
             cursor.close()
             connection.close()
             print("the connection is closed")
-            user_id = result.pop()
-            id = user_id['id']
-            session['id'] = id
             return redirect(landing_page + f"welcome")
         except Exception as e:
             message = f"and error occurred: {e}"
@@ -157,8 +158,7 @@ def create_survey():
     if request.method == "POST":
         try:
             title = request.form['title']
-            num_type1 = request.form['type1num']
-            num_type2 =  request.form['type2num']
+            emails= request.form['emails']
             start = request.form['start']
             end = request.form['end']
             desc = request.form['description']
@@ -166,12 +166,13 @@ def create_survey():
             print(f"the error is: {e}")
             return render_template('survey.html', error=e)
         print(f"title: {title}")
-        print(f"num type 1: {num_type1}")
-        print(f"num type 2: {num_type2}")
+        print(f"emails: {emails}")
         print(f"description: {desc}")
         print(f"start: {start}")
         print(f"end: {end}")
         today = date.today()
+        email_list = emails.split(" ")
+        print(email_list)
         if 'id' in session:
             id = session['id']
         else:
@@ -183,13 +184,26 @@ def create_survey():
             cursor.callproc("i_survey", (id, today, start, end, title, desc))
             result = unpack_results(stored_results=cursor.stored_results())
             print(result)
+            survey_id = result.pop()
+            sid = survey_id['in_surveyId']
+            session['sid'] = sid
+
+            # if any user is a valid user relate them as a participant
+            for email in email_list:
+                cursor.callproc("s_user", (email,))
+                results = unpack_results(stored_results=cursor.stored_results())
+                if len(results) != 0:
+                    temp = results.pop()
+                    temp_id = temp['id'] 
+                    cursor.callproc("i_participant", (temp_id, sid))
+                    results = unpack_results(stored_results=cursor.stored_results())
+                else:
+                    print("the user email was not found")
+            # close the connection 
             connection.commit()
             cursor.close()
             connection.close()
             print("the connection is closed")
-            survey_id = result.pop()
-            sid = survey_id['in_surveyId']
-            session['sid'] = sid
             return redirect(url_for('enter_question'))
         except Exception as e:
             message = f"and error occurred: {e}"
@@ -246,31 +260,6 @@ def enter_question():
             return render_template('question.html', error=error, questions=questions)
     return render_template("question.html" ,error=error, questions=questions)
 
-    
-# @app.route("/login", methods=["GET"])
-# def login():
-#     """ log a user in. """
-#     email = "test3@okay.com"
-#     password = "test3Password"
-
-#     try:
-#         # create a connection to the database
-#         connection, cursor = connect_to_database()
-#         # use the cursor to call the get the user table
-#         cursor.callproc("s_login",(email,password))
-#         user_id = unpack_results(stored_results=cursor.stored_results())
-#         print(user_id)
-#         connection.commit()
-#         cursor.close()
-#         connection.close()
-#         return Response(json.dumps(f"the user id is : {user_id}"), status=200, mimetype="application/json")
-#     except Exception as error:
-#         message = f"and error occurred: {error}"
-#         if 'cursor' in locals():
-#             cursor.close()
-#         if 'connection' in locals():
-#             connection.close()
-#         return Response(json.dumps(message), status=500, mimetype="application/json")
 
 
 # @app.route("/delete_user", methods=["GET"])
@@ -297,50 +286,45 @@ def enter_question():
 #             connection.close()
 #         return Response(json.dumps(message), status=200, mimetype="application/json")
 
-# @app.route("/make_survey", methods=["GET"])
-# def make_survey():
-#     """ bring back the user table. """
-#     # survery table stuff
-#     user_id = 2
-#     start = date(2022, 12, 1)
-#     end = date(2022, 12, 25)
-#     participants = 1
-#     description = "test survey for insertion mapping"
 
-#     # questionaire stuff
 
-#     q1 = "how old are you"
-#     a1 = "1000"
-#     q2 = "where do you live"
-#     a2 = "Florida"
-#     q3 = "how much do you like this project"
-#     a3 = "5"
-   
-#     try:
-#         # create a connection to the database
-#         connection, cursor = connect_to_database()
-#         # use the cursor to call the get the user table
-#         cursor.callproc("i_survey",(user_id, start, end, participants, description, q1, a1, q2, a2, q3, a3))
-#         confirm = unpack_results(stored_results=cursor.stored_results())
-#         print(confirm)
-#         connection.commit()
-#         cursor.close()
-#         connection.close()
-#     except Exception as error:
-#         message = f"and error occurred: {error}"
-#         if 'cursor' in locals():
-#             cursor.close()
-#         if 'connection' in locals():
-#             connection.close()
-#         return Response(json.dumps(message), status=200, mimetype="application/json")
-#     return Response(json.dumps(f"The user id: {user_id} had a survey created."), status=200, mimetype="application/json")
-
-@app.route('/view_active_available', methods=['GET'])
+@app.route('/view_active_available', methods=['GET', 'POST'])
 def view_active_available():
     """ this route will take a user id in the request paramters and find all the surverys available for the user to take based on
         the surveys start, end, and status or whether or not that have taken the survey once. """
-    print("this is the place holder")
-    return json.dumps("viewing all the active surveys right now.")
+    
+    surveys = None
+    if 'id' in session:
+        id = session['id']
+    else:
+        id = 999999
+    today = date.today()
+    print(f"id: {id} and today is {today}")
+    try:
+        # create a connection to the database
+        print("in try of view active")
+        connection, cursor = connect_to_database()
+        # use the cursor register survey and get its id
+        cursor.callproc("s_participate", (id, today))
+        result = unpack_results(stored_results=cursor.stored_results())
+        print(result)
+        surveys = result
+        connection.commit()
+        cursor.close()
+        connection.close()
+        print("the connection is closed")
+    except Exception as e:
+        message = f"and error occurred: {e}"
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
+        return Response(json.dumps(message), status=500, mimetype="application/json")
+
+    if request.method == "POST":
+        print("nothing posting yet")
+    
+    return render_template('survey_display.html', surveys=surveys)
 
 @app.route('/view_survey_results', methods=['GET'])
 def view_survey_results():
