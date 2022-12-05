@@ -1,0 +1,31 @@
+{% extends 'welcome.html' %}
+
+
+{% block body %}
+
+<html lang="on">
+  <head>
+    <meta charset ="UTF-8"/>
+    <meta name ="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Document</title>
+  </head>
+  <body>
+    <table id="data" class="table table-striped">
+      <tr>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Start Date</th>
+        <th>End Date</th>
+      </tr>
+      <tr>
+        <td>{{title}}</td>
+        <td>{{description}}</td>
+        <td>{{start}}</td>
+        <td>{{end}}</td>
+      </tr>  
+    </table>
+  </div>
+  </body>
+</html>
+ 
+{% endblock %}

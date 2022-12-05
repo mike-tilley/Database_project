@@ -1,0 +1,29 @@
+{% extends 'welcome.html' %}
+
+
+{% block body %}
+
+<html>
+  <body>
+    <div class="container">
+      <h1>you are taking survey {{sid}}</h1>
+      <br>
+      <br>
+      {% if surveys %}
+        <p> {{ surveys }}</p>
+      {% endif %}
+      <br>
+      <form action="" method="post">
+        <label> Enter survey ID to take it </label>
+        <br>
+        <input type="text" placeholder="survey id" name="sid" value="{{
+            request.form.typesid }}" required>
+        <br>
+        <input class="btn btn-default" type="submit" value="Submit">
+      </form>
+    
+    </div>
+  </body>
+</html>
+ 
+{% endblock %}
