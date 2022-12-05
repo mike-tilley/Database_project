@@ -466,13 +466,135 @@ def take_survey():
     return render_template("question.html" ,error=error, questions=questions)
 
 
-@app.route('/view_survey_results', methods=['GET'])
+@app.route("/delete_survey", methods=["GET"])
+def delete_survey():
+    #deletes oldest survey
+    """ delete a survey. """
+    survey_id = 3
+
+    try:
+        # create a connection to the database
+        connection, cursor = connect_to_database()
+        # use the cursor to call the get the user table
+        cursor.callproc("d_survey")
+        confirm = unpack_results(stored_results=cursor.stored_results())
+        print(confirm)
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return Response(json.dumps(f"the survey was deleted"), status=200, mimetype="application/json")
+    except Exception as error:
+        message = f"and error occurred: {error}"
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
+        return Response(json.dumps(message), status=200, mimetype="application/json")
+
+
+@app.route("/survey_results", methods=["GET"])
+def survey_results():
+    try:
+        sid = session["sid"]
+        connection, cursor = connect_to_database()
+        cursor.callproc("s_survey_title", (sid,))
+        results = unpack_results(stored_results=cursor.stored_results())
+        for result in results:
+            title = result["title"]
+        print(title)
+
+        cursor.callproc("s_survey_description", (sid,))
+        results = unpack_results(stored_results =cursor.stored_results())
+        for result in results:
+            description = result["description"]
+        print(description)
+
+        cursor.callproc("s_start_date", (sid,))
+        results = unpack_results(stored_results =cursor.stored_results())
+        for result in results:
+            start = result["start"]
+        print(start)
+
+
+        cursor.callproc("s_end_date", (sid,))
+        results = unpack_results(stored_results =cursor.stored_results())
+        for result in results:
+            end = result["end"]
+        print(end)
+
+        cursor.callproc("s_survey_questions", (sid,))
+        results = unpack_results(stored_results =cursor.stored_results())
+        for result in results:
+            questions = result["q"]
+        print(questions)
+
+        
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return render_template('user_survey_results.html', title = title, description = description, start = start, end = end, questions = questions)
+    except Exception as error:
+        message = f"and error occurred: {error}"
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
+        return Response(json.dumps(message), status=200, mimetype="application/json")
+
+# @app.route('/view_survey_results', methods=['GET'])
+# def view_survey_results():
+#     """ this route will need to take a users id in the request parameters and find all the users surveys that have been
+#         comepleted and bring back the answers in some organized way. """
+#     print("this is the place holder")
+#     return json.dumps("this will bring back all the survey results.")
+
+
+@app.route('/view_survey_results', methods=['GET', 'POST'])
 def view_survey_results():
     """ this route will need to take a users id in the request parameters and find all the users surveys that have been
         comepleted and bring back the answers in some organized way. """
-    print("this is the place holder")
-    return json.dumps("this will bring back all the survey results.")
+    
 
+    if 'id' in session:
+        id = session['id']
+    else:
+        id = 999999
+    print(f"in the welcome route with the identifier {id}")   
+    error = None
+    try:
+        # create a connection to the database
+        connection, cursor = connect_to_database()
+        # use the cursor to call the get the user table
+        cursor.callproc("s_usersurvey", (id,))
+        for result in cursor.stored_results():
+            data = result.fetchall()
+        
+        #results = unpack_results(stored_results=cursor.stored_results())
+        print(data)
+        #temp = results.pop()
+        # surveys = list(temp.values())
+        # for v in temp.values():
+        #     surveys.append(v)
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+    except Exception as error:
+        message = f"and error occurred: {error}"
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
+        return render_template("user_survey_display.html", survey = data, error = error)
+
+    if request.method == "POST":
+        print("the button is being clicked")
+        sid = request.form['sid']
+        session['sid'] = sid
+        return redirect(url_for(f'survey_results'))
+    return render_template("user_survey_display.html", survey = data ,error = error)
+    #return Response(json.dumps(surveys), status=200, mimetype="application/json")
 
 if __name__ == '__main__':
     app.run(debug=True)

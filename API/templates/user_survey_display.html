@@ -1,0 +1,48 @@
+{% extends 'welcome.html' %}
+
+
+{% block body %}
+
+<html lang="on">
+  <head>
+    <meta charset ="UTF-8"/>
+    <meta name ="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Document</title>
+  </head>
+  <body>
+    <table id="data" class="table table-striped">
+      <tr>
+        <th>Title</th>
+        <th>ID</th>
+        
+      </tr>
+      {% for row in survey %}
+      <tr>
+        {% for cell in row %}
+        <td>{{cell}}</td>
+
+        {% endfor %}
+      </tr>  
+      {% endfor %}
+
+    </table>
+    <form action="" method="post">
+    <div class="container">
+      {% if questions %}
+      <p>{{ questions }}</p>
+      {% endif %}
+      <br>
+      <input type="text" placeholder="Enter Survey ID" name="sid" value="{{
+          request.form.sid}}" required>
+      <br>
+      <input class="btn btn-default" type="submit" value="View Report">
+    </form>
+    {% if error %}
+      <p class="error"><strong>Error:</strong> {{ error }}
+    {% endif %}
+  </div>
+    <!-- <button onclick="server.increment()">Select</button> -->
+  </body>
+</html>
+ 
+{% endblock %}
