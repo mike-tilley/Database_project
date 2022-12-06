@@ -355,7 +355,7 @@ def view_active_available():
 def take_survey():
     """ this will take a survey id and bring back all the questions associated to that survey. 
         Then the answers will be recorded in the answer table. """
-
+    
     questions = None
     error = None
 
@@ -410,11 +410,15 @@ def take_survey():
                 cursor.callproc("i_answer", (id, qid, a))
                 result = unpack_results(stored_results=cursor.stored_results())
                 print(result)
+            # update the status that the survey is taken. 
+            print(f"sid: {sid} ")
+            cursor.callproc('u_participate',(id,sid))
+            result = unpack_results(stored_results=cursor.stored_results())
+            print(result)
             connection.commit()
             cursor.close()
             connection.close()
             print("the connection is closed")
-            redirect(url_for('welcome'))
         except Exception as e:
             message = f"and error occurred: {e}"
             if 'cursor' in locals():
@@ -422,48 +426,11 @@ def take_survey():
             if 'connection' in locals():
                 connection.close()
             return Response(json.dumps(message), status=500, mimetype="application/json")
+
+        return render_template('welcome.html')
     
 
     return render_template('q_and_a.html', questions=questions, error=error)
-    
-    # questions = None
-    # error = None
-    # if request.method == "POST":
-    #     try:
-    #         if "type2" in request.form:
-    #             print("it is a type 1")
-    #             type = 2
-    #         elif "type1" in request.form:
-    #             print("it is a type 2")
-    #             type = 1
-    #         else:
-    #             raise Exception("check a box")
-    #         q = request.form["question"]
-    #         print(f"type: {type}")
-    #         print(f"question: {q}")
-    #         try:
-    #             # create a connection to the database
-    #             connection, cursor = connect_to_database()
-    #             # use the cursor register survey and get its id
-    #             cursor.callproc("i_question", (sid, type, q, 0))
-    #             result = unpack_results(stored_results=cursor.stored_results())
-    #             print(result)
-    #             connection.commit()
-    #             cursor.close()
-    #             connection.close()
-    #             print("the connection is closed")
-    #             return redirect(url_for('enter_question'))
-    #         except Exception as e:
-    #             message = f"and error occurred: {e}"
-    #             if 'cursor' in locals():
-    #                 cursor.close()
-    #             if 'connection' in locals():
-    #                 connection.close()
-    #             return Response(json.dumps(message), status=500, mimetype="application/json")
-    #     except Exception as e:
-    #         error=f"error: {e}"
-    #         return render_template('question.html', error=error, questions=questions)
-    # return render_template("question.html" ,error=error, questions=questions)
 
 
 @app.route("/delete_survey", methods=["GET"])
@@ -489,6 +456,7 @@ def delete_survey():
             cursor.close()
         if 'connection' in locals():
             connection.close()
+
         return Response(json.dumps(message), status=200, mimetype="application/json")
 
 
@@ -522,6 +490,7 @@ def survey_results():
             end = result["end"]
         print(end)
 
+        
 
         questions = []
         cursor.callproc("s_survey_questions", (sid,))
@@ -533,13 +502,58 @@ def survey_results():
         for result in cursor.stored_results():
             questions = result.fetchall()
         print(questions)
-
-        
+        question_id_list = []
+        for q in questions:
+            temp, _ = q
+            question_id_list.append(temp)
+        print(question_id_list)
+        cursor.callproc('s_user_in_part', (sid,))
+        user_list = []
+        user_res = unpack_results(stored_results =cursor.stored_results())
+        print(user_res)
+        for user in user_res:
+            for k,v in user.items():
+                user_list.append(v)
+        print(user_list)
+        answer_list = []
+        answer_dict = {}
+        for user in user_list:
+            for question in question_id_list:
+                
+                cursor.callproc("s_answerid", (user, question))
+                result = unpack_results(stored_results =cursor.stored_results())
+                if len(result) != 0:
+                    print(result)
+                    for r in result:
+                        answer_list.append(r['aid'])
+                        answer_dict.update({question: [] })
+                        for answer in answer_list:
+                            responses = []
+                            cursor.callproc("s_answer", (answer,))
+                            result = unpack_results(stored_results =cursor.stored_results())
+                            if len(result) != 0:
+                                for r in result:
+                                    print(r)
+                                    responses.append(r['a'])
+                                    print("how much are you here?")
+                                    print(r['a'])
+                    answer_dict[question] =r['a']
+            print(answer_dict)
+    
+        # responses= []
+        # for answer in answer_list:
+        #     cursor.callproc("s_answer", (answer,))
+        #     result = unpack_results(stored_results =cursor.stored_results())
+        #     if len(result) != 0:
+        #         for r in result:
+        #             print(r)
+        #             responses.append(r['a'])
 
         connection.commit()
         cursor.close()
         connection.close()
-        return render_template('user_survey_results.html', title = title, description = description, start = start, end = end, questions = questions)
+        return render_template('user_survey_results.html', title = title, description = description, start = start, end = end, 
+                                                questions = questions, answers=answer_dict)
     except Exception as error:
         message = f"and error occurred: {error}"
         if 'cursor' in locals():
