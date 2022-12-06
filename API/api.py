@@ -433,31 +433,35 @@ def take_survey():
     return render_template('q_and_a.html', questions=questions, error=error)
 
 
-@app.route("/delete_survey", methods=["GET"])
+@app.route("/delete_survey", methods=["GET", "POST"])
 def delete_survey():
     #deletes oldest survey
     """ delete a survey. """
-    survey_id = 3
+    if request.method == "POST":
+        print("the button is being clicked")
+        sid = request.form['sid']
+        session['sid'] = sid
 
-    try:
-        # create a connection to the database
-        connection, cursor = connect_to_database()
-        # use the cursor to call the get the user table
-        cursor.callproc("d_survey")
-        confirm = unpack_results(stored_results=cursor.stored_results())
-        print(confirm)
-        connection.commit()
-        cursor.close()
-        connection.close()
-        return Response(json.dumps(f"the survey was deleted"), status=200, mimetype="application/json")
-    except Exception as error:
-        message = f"and error occurred: {error}"
-        if 'cursor' in locals():
+        try:
+            # create a connection to the database
+
+            connection, cursor = connect_to_database()
+            # use the cursor to call the get the user table
+            cursor.callproc("d_survey", (sid,))
+            confirm = unpack_results(stored_results=cursor.stored_results())
+            print(confirm)
+            connection.commit()
             cursor.close()
-        if 'connection' in locals():
             connection.close()
-
-        return Response(json.dumps(message), status=200, mimetype="application/json")
+            return redirect(url_for(f'view_survey_results'))
+        except Exception as error:
+            message = f"and error occurred: {error}"
+            if 'cursor' in locals():
+                cursor.close()
+            if 'connection' in locals():
+                connection.close()
+            return Response(json.dumps(message), status=200, mimetype="application/json")
+    return render_template('delete_survey.html')
 
 
 @app.route("/survey_results", methods=["GET"])
